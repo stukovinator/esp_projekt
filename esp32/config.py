@@ -1,3 +1,3 @@
 WIFI_SSID = "PLUS-Cyu6"
 WIFI_PASSWORD = "JAgZxhED59xV"
-API_URL = "http://192.168.100.4:5000/temperature"
+API_URL = "https://espprojekt-production.up.railway.app/temperature"
