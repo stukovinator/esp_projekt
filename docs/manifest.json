@@ -2,7 +2,7 @@
     "name": "Termometr ESP32",
     "short_name": "Termometr",
     "description": "Monitorowanie temperatury z ESP32",
-    "start_url": "/",
+    "start_url": "/esp_projekt/",
     "display": "standalone",
     "background_color": "#0a0a0a",
     "theme_color": "#0a0a0a",
