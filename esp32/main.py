@@ -29,9 +29,10 @@ oled = ssd1306.SSD1306_I2C(oled_width, oled_height, i2c)
 ds_sensor = ds18x20.DS18X20(onewire.OneWire(Pin(32)))
 roms = ds_sensor.scan()
 
-
 oled.text("hello", 0, 0)
 oled.show()
+
+last_send_ok = False
 
 def read_temperature():
     ds_sensor.convert_temp()
@@ -44,14 +45,15 @@ def draw_degree(oled, x, y):
     oled.pixel(x,   y+1, 1)
     oled.pixel(x+1, y+1, 1)
 
-def show_temp(temp):
+def show_temp(temp, send_ok=False):
     oled.fill(0)
     oled.text("Temperatura", 0, 0)
-    oled.text(ip, 0, 50)
     temp_str = "{:.1f} ".format(temp)
     oled.text(temp_str, 0, 20)
     draw_degree(oled, len(temp_str) * 8 + 2, 20)
     oled.text("C", len(temp_str) * 8 + 6, 20)
+    status = "Online" if send_ok else "Offline"
+    oled.text(status, 0, 50)
     oled.show()
     
 def send_temp(temp):
@@ -69,8 +71,10 @@ def send_temp(temp):
             data=data,
             headers={"Content-Type": "application/json"}
         )
+        return True
     except Exception as e:
         print("Błąd wysyłania:", e)
+        return False
 
 server = socket.socket()
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -85,8 +89,8 @@ temp = read_temperature()
 while True:
     if time.ticks_diff(time.ticks_ms(), last_read) > 5000:
         temp = read_temperature()
-        show_temp(temp)
-        send_temp(temp)
+        send_ok = send_temp(temp)
+        show_temp(temp, send_ok)
         last_read = time.ticks_ms()
 
     try:
