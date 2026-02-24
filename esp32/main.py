@@ -7,19 +7,32 @@ import network
 import socket
 import json
 import urequests
-from config import WIFI_SSID, WIFI_PASSWORD, API_URL
+from config import NETWORKS, API_URL
 import ntptime
 
 wifi = network.WLAN(network.STA_IF)
 wifi.active(True)
-wifi.connect(WIFI_SSID, WIFI_PASSWORD)
 
-print("Łączenie z WiFi...")
-while not wifi.isconnected():
-    time.sleep(0.1)
-    
-ip = wifi.ifconfig()[0]
-print("Połączono! IP:", ip)
+connected = False
+
+for ssid, password in NETWORKS:
+    print("Próbuję:", ssid)
+    wifi.connect(ssid, password)
+    for _ in range(20):  # czeka max 10 sekund na sieć
+        if wifi.isconnected():
+            connected = True
+            break
+        time.sleep(0.5)
+    if connected:
+        print("Połączono z:", ssid)
+        break
+
+if connected:
+    ip = wifi.ifconfig()[0]
+    print("IP:", ip)
+    ntptime.settime()
+else:
+    ip = "brak WiFi"
 
 i2c = SoftI2C(scl=Pin(22), sda=Pin(23))
 oled_width = 128
