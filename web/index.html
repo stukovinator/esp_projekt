@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Termometr" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icon.png" />
+    <title>Termometr</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;600;800&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg2: #111111;
+            --bg3: #1a1a1a;
+            --accent: #ff6b00;
+            --accent2: #ff9a40;
+            --muted: #333;
+            --text: #e8e8e8;
+            --text-dim: #666;
+            --online: #00c853;
+            --offline: #ff1744;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Barlow Condensed', sans-serif;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Siatka w tle */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--muted) 1px, transparent 1px),
+                linear-gradient(90deg, var(--muted) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.07;
+            pointer-events: none;
+        }
+
+        /* Poświata w centrum */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255, 107, 0, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Nagłówek */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--muted);
+        }
+
+        .title {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--offline);
+            transition: background 0.3s;
+        }
+
+        .status-dot.online {
+            background: var(--online);
+            box-shadow: 0 0 8px var(--online);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .status-text {
+            color: var(--text-dim);
+        }
+
+        /* Główny wyświetlacz temperatury */
+        .temp-card {
+            background: var(--bg2);
+            border: 1px solid var(--muted);
+            border-radius: 4px;
+            padding: 40px 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .temp-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .temp-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        .temp-display {
+            display: flex;
+            align-items: flex-start;
+            gap: 4px;
+            line-height: 1;
+        }
+
+        .temp-value {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 96px;
+            color: var(--accent);
+            text-shadow: 0 0 40px rgba(255, 107, 0, 0.3);
+            transition: all 0.5s ease;
+            letter-spacing: -4px;
+        }
+
+        .temp-value.loading {
+            color: var(--muted);
+            text-shadow: none;
+        }
+
+        .temp-unit {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 32px;
+            color: var(--accent2);
+            margin-top: 12px;
+        }
+
+        /* Dolny pasek karty */
+        .temp-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .temp-footer-text {
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* Karty statystyk */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .stat-card {
+            background: var(--bg2);
+            border: 1px solid var(--muted);
+            border-radius: 4px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        .stat-value {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 24px;
+            color: var(--text);
+        }
+
+        .stat-value.hot {
+            color: #ff4444;
+        }
+
+        .stat-value.cold {
+            color: #44aaff;
+        }
+
+        /* Ostatni odczyt */
+        .last-update-card {
+            background: var(--bg2);
+            border: 1px solid var(--muted);
+            border-radius: 4px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .last-update-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        .last-update-value {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            color: var(--text);
+        }
+
+        /* Przycisk odświeżania */
+        .refresh-btn {
+            background: transparent;
+            border: 1px solid var(--muted);
+            border-radius: 4px;
+            color: var(--text-dim);
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .refresh-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .refresh-btn:active {
+            background: rgba(255, 107, 0, 0.05);
+        }
+
+        .refresh-btn.spinning {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* Animacja wejścia */
+        .container>* {
+            animation: fadeIn 0.4s ease both;
+        }
+
+        .container>*:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .container>*:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .container>*:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .container>*:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+
+        .container>*:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Zmiana temperatury – flash */
+        @keyframes tempFlash {
+            0% {
+                text-shadow: 0 0 40px rgba(255, 107, 0, 0.3);
+            }
+
+            50% {
+                text-shadow: 0 0 80px rgba(255, 107, 0, 0.8);
+            }
+
+            100% {
+                text-shadow: 0 0 40px rgba(255, 107, 0, 0.3);
+            }
+        }
+
+        .temp-value.flash {
+            animation: tempFlash 0.5s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="header">
+            <span class="title">// Termometr ESP32</span>
+            <div class="status-badge">
+                <div class="status-dot" id="statusDot"></div>
+                <span class="status-text" id="statusText">—</span>
+            </div>
+        </div>
+
+        <div class="temp-card">
+            <span class="temp-label">Temperatura</span>
+            <div class="temp-display">
+                <span class="temp-value loading" id="tempValue">--.-</span>
+                <span class="temp-unit">°C</span>
+            </div>
+            <div class="temp-footer">
+                <span class="temp-footer-text" id="tempFooter">oczekiwanie na dane...</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">Min sesja</span>
+                <span class="stat-value cold" id="minVal">--.-</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Max sesja</span>
+                <span class="stat-value hot" id="maxVal">--.-</span>
+            </div>
+        </div>
+
+        <div class="last-update-card">
+            <span class="last-update-label">Ostatni odczyt</span>
+            <span class="last-update-value" id="lastUpdate">—</span>
+        </div>
+
+        <button class="refresh-btn" id="refreshBtn" onclick="fetchTemp()">
+            ↻ Odśwież
+        </button>
+
+    </div>
+
+    <script>
+        // ← WPISZ SWÓJ URL RAILWAY
+        const API_URL = 'https://espprojekt-production.up.railway.app/temperature';
+        const INTERVAL = 10000; // odświeżanie co 10 sekund
+
+        let minTemp = null;
+        let maxTemp = null;
+        let previousTemp = null;
+
+        const tempEl = document.getElementById('tempValue');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        const tempFooterEl = document.getElementById('tempFooter');
+        const minEl = document.getElementById('minVal');
+        const maxEl = document.getElementById('maxVal');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        function setOnline(online) {
+            statusDot.className = 'status-dot' + (online ? ' online' : '');
+            statusText.textContent = online ? 'Online' : 'Offline';
+        }
+
+        function formatTime(isoStr) {
+            if (!isoStr) return '—';
+            // obsługa formatu z ESP32: "2024-02-24 14:32:15"
+            return isoStr.replace('T', ' ').substring(0, 16);
+        }
+
+        async function fetchTemp() {
+            refreshBtn.classList.add('spinning');
+            refreshBtn.textContent = '↻ Ładowanie...';
+
+            try {
+                const res = await fetch(API_URL, { cache: 'no-store' });
+                const data = await res.json();
+
+                const temp = data.temperature;
+
+                if (temp !== null && temp !== undefined) {
+                    const rounded = parseFloat(temp).toFixed(1);
+
+                    // Flash jeśli temperatura się zmieniła
+                    if (previousTemp !== null && previousTemp !== rounded) {
+                        tempEl.classList.remove('flash');
+                        void tempEl.offsetWidth;
+                        tempEl.classList.add('flash');
+                    }
+                    previousTemp = rounded;
+
+                    tempEl.textContent = rounded;
+                    tempEl.classList.remove('loading');
+
+                    // Min/Max
+                    const num = parseFloat(temp);
+                    if (minTemp === null || num < minTemp) {
+                        minTemp = num;
+                        minEl.textContent = num.toFixed(1);
+                    }
+                    if (maxTemp === null || num > maxTemp) {
+                        maxTemp = num;
+                        maxEl.textContent = num.toFixed(1);
+                    }
+
+                    setOnline(true);
+                    lastUpdateEl.textContent = formatTime(data.last_updated);
+                    tempFooterEl.textContent = 'dane aktualne';
+                } else {
+                    setOnline(false);
+                    tempFooterEl.textContent = 'brak danych z czujnika';
+                }
+
+            } catch (e) {
+                setOnline(false);
+                tempEl.classList.add('loading');
+                tempFooterEl.textContent = 'błąd połączenia';
+            }
+
+            refreshBtn.classList.remove('spinning');
+            refreshBtn.textContent = '↻ Odśwież';
+        }
+
+        // Start
+        fetchTemp();
+        setInterval(fetchTemp, INTERVAL);
+    </script>
+</body>
+
+</html>
