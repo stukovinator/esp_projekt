@@ -1,0 +1,105 @@
+from machine import Pin, SoftI2C
+import onewire
+import ds18x20
+import time
+import ssd1306
+import network
+import socket
+import json
+import urequests
+from config import WIFI_SSID, WIFI_PASSWORD, API_URL
+import ntptime
+
+wifi = network.WLAN(network.STA_IF)
+wifi.active(True)
+wifi.connect(WIFI_SSID, WIFI_PASSWORD)
+
+print("Łączenie z WiFi...")
+while not wifi.isconnected():
+    time.sleep(0.1)
+    
+ip = wifi.ifconfig()[0]
+print("Połączono! IP:", ip)
+
+i2c = SoftI2C(scl=Pin(22), sda=Pin(23))
+oled_width = 128
+oled_height = 64
+oled = ssd1306.SSD1306_I2C(oled_width, oled_height, i2c)
+
+ds_sensor = ds18x20.DS18X20(onewire.OneWire(Pin(32)))
+roms = ds_sensor.scan()
+
+
+oled.text("hello", 0, 0)
+oled.show()
+
+def read_temperature():
+    ds_sensor.convert_temp()
+    time.sleep_ms(750)
+    return ds_sensor.read_temp(roms[0])
+
+def draw_degree(oled, x, y):
+    oled.pixel(x,   y,   1)
+    oled.pixel(x+1, y,   1)
+    oled.pixel(x,   y+1, 1)
+    oled.pixel(x+1, y+1, 1)
+
+def show_temp(temp):
+    oled.fill(0)
+    oled.text("Temperatura", 0, 0)
+    oled.text(ip, 0, 50)
+    temp_str = "{:.1f} ".format(temp)
+    oled.text(temp_str, 0, 20)
+    draw_degree(oled, len(temp_str) * 8 + 2, 20)
+    oled.text("C", len(temp_str) * 8 + 6, 20)
+    oled.show()
+    
+def send_temp(temp):
+    try:
+        t = time.localtime()
+        timestamp = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(
+            t[0], t[1], t[2], t[3]+1, t[4], t[5]
+        )
+        data = json.dumps({
+            "temperature": temp,
+            "timestamp": timestamp
+        })
+        urequests.post(
+            API_URL,
+            data=data,
+            headers={"Content-Type": "application/json"}
+        )
+    except Exception as e:
+        print("Błąd wysyłania:", e)
+
+server = socket.socket()
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server.bind(('', 80))
+server.listen(5)
+server.setblocking(False)
+print("Serwer działa!")
+
+last_read = 0
+temp = read_temperature()
+
+while True:
+    if time.ticks_diff(time.ticks_ms(), last_read) > 5000:
+        temp = read_temperature()
+        show_temp(temp)
+        send_temp(temp)
+        last_read = time.ticks_ms()
+
+    try:
+        conn, addr = server.accept()
+        request = conn.recv(1024).decode()
+
+        if "GET /temperature" in request:
+            body = json.dumps({"temperature": temp, "unit": "C"})
+            response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\n\r\n" + body
+        else:
+            response = "HTTP/1.1 404 Not Found\r\n\r\n"
+
+        conn.send(response)
+        conn.close()
+    except:
+        pass
