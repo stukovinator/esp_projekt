@@ -5,30 +5,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Termometr" />
-    <meta name="theme-color" content="#f0f4ff" />
+    <meta name="theme-color" content="#000000" />
     <link rel="manifest" href="manifest.json" />
     <link rel="apple-touch-icon" href="icon.png" />
     <title>Termometr</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;600;700&display=swap"
         rel="stylesheet" />
     <style>
         :root {
-            --bg: #f0f4ff;
-            --bg2: #ffffff;
-            --bg3: #e8eeff;
-            --accent: #2563eb;
-            --accent-light: #dbeafe;
-            --accent-mid: #93c5fd;
-            --text: #0f172a;
-            --text-mid: #475569;
-            --text-dim: #94a3b8;
-            --border: #e2e8f0;
-            --online: #10b981;
-            --offline: #ef4444;
-            --cold: #3b82f6;
-            --hot: #f97316;
+            --bg: #000000;
+            --card: #1c1c1e;
+            --card2: #2c2c2e;
+            --sep: #38383a;
+            --accent: #0a84ff;
+            --green: #30d158;
+            --red: #ff453a;
+            --orange: #ff9f0a;
+            --text: #ffffff;
+            --text-sec: #ebebf599;
+            --text-ter: #ebebf54d;
+            --radius: 16px;
+            --radius-sm: 12px;
         }
 
         * {
@@ -38,102 +37,90 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        html,
+        body {
+            height: 100%;
+        }
+
         body {
             background: var(--bg);
             color: var(--text);
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Outfit', -apple-system, sans-serif;
             min-height: 100dvh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 24px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Delikatne kółka w tle */
-        .bg-circle {
-            position: fixed;
-            border-radius: 50%;
-            pointer-events: none;
-        }
-
-        .bg-circle-1 {
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
-            top: -150px;
-            right: -150px;
-        }
-
-        .bg-circle-2 {
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(147, 197, 253, 0.12) 0%, transparent 70%);
-            bottom: -100px;
-            left: -100px;
+            padding: 24px 20px;
+            -webkit-font-smoothing: antialiased;
         }
 
         .container {
             width: 100%;
-            max-width: 380px;
+            max-width: 390px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
-            position: relative;
-            z-index: 1;
+            gap: 12px;
         }
 
         /* Nagłówek */
         .header {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-between;
             padding: 0 4px;
+            margin-bottom: 4px;
         }
 
-        .app-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 22px;
-            color: var(--text);
+        .header-left h1 {
+            font-size: 28px;
+            font-weight: 700;
             letter-spacing: -0.5px;
+            line-height: 1.1;
         }
 
+        .header-left p {
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--text-sec);
+            margin-top: 2px;
+        }
+
+        /* Pill statusu */
         .status-pill {
             display: flex;
             align-items: center;
-            gap: 6px;
-            background: var(--bg2);
-            border: 1px solid var(--border);
+            gap: 5px;
+            background: var(--card);
             border-radius: 100px;
-            padding: 6px 12px;
+            padding: 6px 11px 6px 8px;
             font-size: 12px;
-            font-weight: 500;
-            color: var(--text-mid);
-            transition: all 0.3s;
+            font-weight: 600;
+            color: var(--text-sec);
+            transition: all 0.4s ease;
+            margin-top: 4px;
         }
 
         .status-pill.online {
-            background: #ecfdf5;
-            border-color: #a7f3d0;
-            color: #065f46;
+            background: rgba(48, 209, 88, 0.15);
+            color: var(--green);
         }
 
         .status-dot {
-            width: 6px;
-            height: 6px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
-            background: var(--offline);
+            background: var(--red);
             flex-shrink: 0;
+            transition: background 0.4s;
         }
 
         .status-pill.online .status-dot {
-            background: var(--online);
-            animation: breathe 2.5s ease-in-out infinite;
+            background: var(--green);
+            animation: pulse 2s ease-in-out infinite;
         }
 
-        @keyframes breathe {
+        @keyframes pulse {
 
             0%,
             100% {
@@ -142,243 +129,306 @@
             }
 
             50% {
-                transform: scale(1.4);
-                opacity: 0.7;
+                transform: scale(1.3);
+                opacity: 0.6;
             }
         }
 
-        /* Główna karta temperatury */
-        .temp-card {
-            background: var(--bg2);
-            border-radius: 24px;
-            padding: 36px 32px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 32px rgba(37, 99, 235, 0.06);
+        /* Główna karta */
+        .main-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 28px 28px 24px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 6px;
-            position: relative;
-            overflow: hidden;
+            gap: 0;
         }
 
-        /* Subtelny gradient na górze karty */
-        .temp-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--accent-mid), var(--accent), var(--accent-mid));
-            border-radius: 24px 24px 0 0;
+        .main-card-label {
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--text-sec);
+            letter-spacing: 0.01em;
+            align-self: flex-start;
+            margin-bottom: 16px;
         }
 
-        .temp-label {
-            font-size: 11px;
-            font-weight: 500;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: var(--text-dim);
-            margin-bottom: 4px;
-        }
-
-        .temp-display {
+        /* Ogromna liczba */
+        .temp-row {
             display: flex;
             align-items: flex-start;
-            gap: 2px;
+            gap: 0;
         }
 
-        .temp-value {
-            font-family: 'DM Serif Display', serif;
-            font-size: 100px;
-            line-height: 1;
-            color: var(--accent);
-            letter-spacing: -4px;
+        .temp-num {
+            font-size: 96px;
+            font-weight: 200;
+            line-height: 0.9;
+            letter-spacing: -6px;
+            color: var(--text);
             transition: color 0.5s ease;
         }
 
-        .temp-value.loading {
-            color: var(--text-dim);
+        .temp-num.loading {
+            color: var(--text-ter);
         }
 
-        .temp-value.warm {
-            color: var(--hot);
+        .temp-num.warm {
+            color: var(--orange);
         }
 
-        .temp-suffix {
+        .temp-symbol {
             display: flex;
             flex-direction: column;
-            padding-top: 14px;
-            gap: 2px;
+            padding-top: 8px;
+            margin-left: 4px;
         }
 
-        .temp-degree {
-            font-family: 'DM Serif Display', serif;
-            font-size: 36px;
-            color: var(--accent-mid);
-            line-height: 1;
-        }
-
-        .temp-celsius {
-            font-size: 20px;
+        .temp-deg {
+            font-size: 32px;
             font-weight: 300;
-            color: var(--text-dim);
+            color: var(--text-sec);
+            line-height: 1;
+            letter-spacing: -1px;
         }
 
-        .temp-footer {
-            font-size: 12px;
-            color: var(--text-dim);
-            margin-top: 6px;
+        .temp-unit {
+            font-size: 18px;
             font-weight: 400;
+            color: var(--text-ter);
+            letter-spacing: 0.05em;
+            margin-top: 2px;
         }
 
-        /* Karty statystyk */
+        /* Pasek postępu */
+        .progress-wrap {
+            width: 100%;
+            margin-top: 24px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 4px;
+            background: var(--sep);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 100px;
+            background: var(--accent);
+            transition: width 1s cubic-bezier(0.16, 1, 0.3, 1), background 0.5s ease;
+            width: 0%;
+        }
+
+        .progress-fill.warm {
+            background: var(--orange);
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+        }
+
+        .progress-labels span {
+            font-size: 11px;
+            font-weight: 400;
+            color: var(--text-ter);
+        }
+
+        /* Separator */
+        .sep-line {
+            width: 100%;
+            height: 1px;
+            background: var(--sep);
+            margin-top: 20px;
+        }
+
+        /* Status tekst pod linią */
+        .temp-footer {
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--text-ter);
+            margin-top: 12px;
+            letter-spacing: 0.02em;
+        }
+
+        /* Siatka statystyk */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 10px;
         }
 
         .stat-card {
-            background: var(--bg2);
-            border-radius: 18px;
-            padding: 18px 20px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 18px 18px 16px;
+        }
+
+        .stat-icon-row {
             display: flex;
-            flex-direction: column;
+            align-items: center;
             gap: 6px;
+            margin-bottom: 10px;
         }
 
         .stat-icon {
-            font-size: 18px;
-            margin-bottom: 2px;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
         }
 
-        .stat-label {
-            font-size: 10px;
+        .stat-icon.cold {
+            background: rgba(10, 132, 255, 0.15);
+        }
+
+        .stat-icon.hot {
+            background: rgba(255, 159, 10, 0.15);
+        }
+
+        .stat-title {
+            font-size: 12px;
             font-weight: 500;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--text-dim);
+            color: var(--text-sec);
         }
 
-        .stat-value {
-            font-family: 'DM Serif Display', serif;
-            font-size: 28px;
-            letter-spacing: -1px;
+        .stat-num {
+            font-size: 30px;
+            font-weight: 300;
+            letter-spacing: -1.5px;
             line-height: 1;
         }
 
-        .stat-value.cold {
-            color: var(--cold);
+        .stat-num.cold {
+            color: var(--accent);
         }
 
-        .stat-value.hot {
-            color: var(--hot);
+        .stat-num.hot {
+            color: var(--orange);
+        }
+
+        .stat-num.empty {
+            color: var(--text-ter);
+            font-size: 24px;
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--text-ter);
+            margin-top: 2px;
+            font-weight: 400;
         }
 
         /* Karta ostatniego odczytu */
         .update-card {
-            background: var(--bg2);
-            border-radius: 18px;
-            padding: 16px 20px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 16px 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
         }
 
         .update-left {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .update-icon {
-            width: 32px;
-            height: 32px;
-            background: var(--accent-light);
+            width: 36px;
+            height: 36px;
+            background: rgba(10, 132, 255, 0.12);
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 15px;
+            font-size: 16px;
             flex-shrink: 0;
         }
 
-        .update-label {
-            font-size: 11px;
-            color: var(--text-dim);
+        .update-title {
+            font-size: 12px;
             font-weight: 500;
-            letter-spacing: 0.05em;
+            color: var(--text-sec);
         }
 
-        .update-value {
-            font-size: 13px;
-            font-weight: 500;
+        .update-val {
+            font-size: 14px;
+            font-weight: 600;
             color: var(--text);
             margin-top: 1px;
+            letter-spacing: -0.2px;
             font-variant-numeric: tabular-nums;
         }
 
-        /* Przycisk odświeżania */
+        /* Przycisk */
         .refresh-btn {
+            width: 100%;
+            padding: 17px;
             background: var(--accent);
             border: none;
-            border-radius: 16px;
-            color: white;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            padding: 16px;
+            border-radius: var(--radius);
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
             cursor: pointer;
-            transition: all 0.2s;
-            width: 100%;
-            letter-spacing: 0.02em;
-            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.25);
+            transition: opacity 0.15s, transform 0.15s;
+            -webkit-font-smoothing: antialiased;
         }
 
         .refresh-btn:active {
+            opacity: 0.8;
             transform: scale(0.98);
-            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
         }
 
         .refresh-btn:disabled {
-            opacity: 0.6;
+            opacity: 0.35;
             cursor: default;
             transform: none;
         }
 
         /* Animacje wejścia */
         .container>* {
-            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+            animation: rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
 
         .container>*:nth-child(1) {
-            animation-delay: 0.05s;
+            animation-delay: 0.04s;
         }
 
         .container>*:nth-child(2) {
-            animation-delay: 0.12s;
+            animation-delay: 0.10s;
         }
 
         .container>*:nth-child(3) {
-            animation-delay: 0.19s;
+            animation-delay: 0.16s;
         }
 
         .container>*:nth-child(4) {
-            animation-delay: 0.26s;
+            animation-delay: 0.22s;
         }
 
         .container>*:nth-child(5) {
-            animation-delay: 0.33s;
+            animation-delay: 0.28s;
         }
 
-        @keyframes slideUp {
+        @keyframes rise {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(18px);
             }
 
             to {
@@ -387,13 +437,13 @@
             }
         }
 
-        @keyframes tempPop {
+        @keyframes numPop {
             0% {
                 transform: scale(1);
             }
 
-            40% {
-                transform: scale(1.04);
+            35% {
+                transform: scale(1.03);
             }
 
             100% {
@@ -401,94 +451,112 @@
             }
         }
 
-        .temp-value.pop {
-            animation: tempPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        .temp-num.pop {
+            animation: numPop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
     </style>
 </head>
 
 <body>
-    <div class="bg-circle bg-circle-1"></div>
-    <div class="bg-circle bg-circle-2"></div>
-
     <div class="container">
 
+        <!-- Nagłówek -->
         <div class="header">
-            <span class="app-title">Termometr</span>
+            <div class="header-left">
+                <h1>Termometr</h1>
+                <p>ESP32 · DS18B20</p>
+            </div>
             <div class="status-pill" id="statusPill">
-                <div class="status-dot" id="statusDot"></div>
+                <div class="status-dot"></div>
                 <span id="statusText">—</span>
             </div>
         </div>
 
-        <div class="temp-card">
-            <span class="temp-label">Temperatura w pomieszczeniu</span>
-            <div class="temp-display">
-                <span class="temp-value loading" id="tempValue">--</span>
-                <div class="temp-suffix">
-                    <span class="temp-degree">°</span>
-                    <span class="temp-celsius">C</span>
+        <!-- Główna karta -->
+        <div class="main-card">
+            <span class="main-card-label">Temperatura w pomieszczeniu</span>
+            <div class="temp-row">
+                <span class="temp-num loading" id="tempNum">--</span>
+                <div class="temp-symbol">
+                    <span class="temp-deg">°</span>
+                    <span class="temp-unit">C</span>
                 </div>
             </div>
-            <span class="temp-footer" id="tempFooter">oczekiwanie na dane…</span>
+            <div class="progress-wrap">
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-labels">
+                    <span>−10°</span>
+                    <span>0°</span>
+                    <span>10°</span>
+                    <span>20°</span>
+                    <span>30°</span>
+                    <span>40°</span>
+                </div>
+            </div>
+            <div class="sep-line"></div>
+            <div class="temp-footer" id="tempFooter">Oczekiwanie na dane…</div>
         </div>
 
+        <!-- Statystyki -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon">🧊</div>
-                <span class="stat-label">Minimum</span>
-                <span class="stat-value cold" id="minVal">—</span>
+                <div class="stat-icon-row">
+                    <div class="stat-icon cold">🧊</div>
+                    <span class="stat-title">Minimum</span>
+                </div>
+                <div class="stat-num cold empty" id="minVal">—</div>
+                <div class="stat-sub" id="minSub">sesja</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">🔆</div>
-                <span class="stat-label">Maksimum</span>
-                <span class="stat-value hot" id="maxVal">—</span>
+                <div class="stat-icon-row">
+                    <div class="stat-icon hot">🌡️</div>
+                    <span class="stat-title">Maksimum</span>
+                </div>
+                <div class="stat-num hot empty" id="maxVal">—</div>
+                <div class="stat-sub" id="maxSub">sesja</div>
             </div>
         </div>
 
+        <!-- Ostatni odczyt -->
         <div class="update-card">
             <div class="update-left">
                 <div class="update-icon">🕐</div>
                 <div>
-                    <div class="update-label">Ostatni odczyt</div>
-                    <div class="update-value" id="lastUpdate">—</div>
+                    <div class="update-title">Ostatni odczyt</div>
+                    <div class="update-val" id="lastUpdate">—</div>
                 </div>
             </div>
         </div>
 
-        <button class="refresh-btn" id="refreshBtn" onclick="fetchTemp()">
-            Odśwież
-        </button>
+        <!-- Przycisk -->
+        <button class="refresh-btn" id="refreshBtn" onclick="fetchTemp()">Odśwież</button>
 
     </div>
 
     <script>
         const API_URL = 'https://espprojekt-production.up.railway.app/temperature';
         const INTERVAL = 10000;
-        const MAX_AGE_SECONDS = 30; // po ilu sekundach uznajemy urządzenie za offline
+        const MAX_AGE = 30;   // sekundy
+        const TEMP_MIN = -10;
+        const TEMP_MAX = 40;
 
-        let minTemp = null;
-        let maxTemp = null;
-        let previousTemp = null;
+        let minTemp = null, maxTemp = null, prevTemp = null;
 
-        const tempEl = document.getElementById('tempValue');
+        const tempNumEl = document.getElementById('tempNum');
         const statusPill = document.getElementById('statusPill');
-        const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
         const lastUpdateEl = document.getElementById('lastUpdate');
         const tempFooterEl = document.getElementById('tempFooter');
         const minEl = document.getElementById('minVal');
         const maxEl = document.getElementById('maxVal');
+        const progressFill = document.getElementById('progressFill');
         const refreshBtn = document.getElementById('refreshBtn');
 
-        function setOnline(online) {
-            if (online) {
-                statusPill.classList.add('online');
-                statusText.textContent = 'Online';
-            } else {
-                statusPill.classList.remove('online');
-                statusText.textContent = 'Offline';
-            }
+        function setOnline(on) {
+            statusPill.classList.toggle('online', on);
+            statusText.textContent = on ? 'Online' : 'Offline';
         }
 
         function formatTime(str) {
@@ -496,12 +564,15 @@
             return str.replace('T', ' ').substring(0, 16);
         }
 
-        function isDataFresh(timestamp, maxSeconds) {
-            if (!timestamp) return false;
-            const last = new Date(timestamp.replace(' ', 'T'));
-            const now = new Date();
-            const diffSeconds = (now - last) / 1000;
-            return diffSeconds < maxSeconds;
+        function isFresh(ts) {
+            if (!ts) return false;
+            return (new Date() - new Date(ts.replace(' ', 'T'))) / 1000 < MAX_AGE;
+        }
+
+        function setProgress(temp) {
+            const pct = Math.max(0, Math.min(100, (temp - TEMP_MIN) / (TEMP_MAX - TEMP_MIN) * 100));
+            progressFill.style.width = pct + '%';
+            progressFill.classList.toggle('warm', temp >= 24);
         }
 
         async function fetchTemp() {
@@ -514,44 +585,45 @@
                 const temp = data.temperature;
 
                 if (temp !== null && temp !== undefined) {
-                    const rounded = parseFloat(temp).toFixed(1);
+                    const val = parseFloat(temp);
+                    const str = val.toFixed(1);
 
-                    if (previousTemp !== null && previousTemp !== rounded) {
-                        tempEl.classList.remove('pop');
-                        void tempEl.offsetWidth;
-                        tempEl.classList.add('pop');
+                    if (prevTemp !== null && prevTemp !== str) {
+                        tempNumEl.classList.remove('pop');
+                        void tempNumEl.offsetWidth;
+                        tempNumEl.classList.add('pop');
                     }
-                    previousTemp = rounded;
+                    prevTemp = str;
 
-                    tempEl.textContent = rounded;
-                    tempEl.classList.remove('loading');
+                    tempNumEl.textContent = str;
+                    tempNumEl.classList.remove('loading');
+                    tempNumEl.classList.toggle('warm', val >= 24);
+                    setProgress(val);
 
-                    // Ciepło/zimno
-                    const num = parseFloat(temp);
-                    if (num >= 24) {
-                        tempEl.classList.add('warm');
-                    } else {
-                        tempEl.classList.remove('warm');
+                    if (minTemp === null || val < minTemp) {
+                        minTemp = val;
+                        minEl.textContent = val.toFixed(1) + '°';
+                        minEl.classList.remove('empty');
+                    }
+                    if (maxTemp === null || val > maxTemp) {
+                        maxTemp = val;
+                        maxEl.textContent = val.toFixed(1) + '°';
+                        maxEl.classList.remove('empty');
                     }
 
-                    // Min/Max
-                    if (minTemp === null || num < minTemp) { minTemp = num; minEl.textContent = num.toFixed(1); }
-                    if (maxTemp === null || num > maxTemp) { maxTemp = num; maxEl.textContent = num.toFixed(1); }
-
-                    // Status zależy od świeżości danych, nie od tego czy Railway odpowiada
-                    const fresh = isDataFresh(data.last_updated, MAX_AGE_SECONDS);
+                    const fresh = isFresh(data.last_updated);
                     setOnline(fresh);
                     lastUpdateEl.textContent = formatTime(data.last_updated);
-                    tempFooterEl.textContent = fresh ? 'dane aktualne' : 'urządzenie offline';
+                    tempFooterEl.textContent = fresh ? 'Dane aktualne' : 'Urządzenie offline';
                 } else {
                     setOnline(false);
-                    tempFooterEl.textContent = 'brak danych z czujnika';
+                    tempFooterEl.textContent = 'Brak danych z czujnika';
                 }
 
             } catch (e) {
                 setOnline(false);
-                tempEl.classList.add('loading');
-                tempFooterEl.textContent = 'błąd połączenia';
+                tempNumEl.classList.add('loading');
+                tempFooterEl.textContent = 'Błąd połączenia';
             }
 
             refreshBtn.disabled = false;
