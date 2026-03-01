@@ -112,7 +112,7 @@ last_read = 0
 temp = read_temperature()
 
 while True:
-    if time.ticks_diff(time.ticks_ms(), last_read) > 5000:
+    if time.ticks_diff(time.ticks_ms(), last_read) > 60000:
         temp = read_temperature()
         send_ok = send_temp(temp)
         show_temp(temp, send_ok)
