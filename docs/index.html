@@ -463,9 +463,9 @@
     </div>
 
     <script>
-        // ← WPISZ SWÓJ URL RAILWAY
         const API_URL = 'https://espprojekt-production.up.railway.app/temperature';
         const INTERVAL = 10000;
+        const MAX_AGE_SECONDS = 30; // po ilu sekundach uznajemy urządzenie za offline
 
         let minTemp = null;
         let maxTemp = null;
@@ -494,6 +494,14 @@
         function formatTime(str) {
             if (!str) return '—';
             return str.replace('T', ' ').substring(0, 16);
+        }
+
+        function isDataFresh(timestamp, maxSeconds) {
+            if (!timestamp) return false;
+            const last = new Date(timestamp.replace(' ', 'T'));
+            const now = new Date();
+            const diffSeconds = (now - last) / 1000;
+            return diffSeconds < maxSeconds;
         }
 
         async function fetchTemp() {
@@ -530,9 +538,11 @@
                     if (minTemp === null || num < minTemp) { minTemp = num; minEl.textContent = num.toFixed(1); }
                     if (maxTemp === null || num > maxTemp) { maxTemp = num; maxEl.textContent = num.toFixed(1); }
 
-                    setOnline(true);
+                    // Status zależy od świeżości danych, nie od tego czy Railway odpowiada
+                    const fresh = isDataFresh(data.last_updated, MAX_AGE_SECONDS);
+                    setOnline(fresh);
                     lastUpdateEl.textContent = formatTime(data.last_updated);
-                    tempFooterEl.textContent = 'dane aktualne';
+                    tempFooterEl.textContent = fresh ? 'dane aktualne' : 'urządzenie offline';
                 } else {
                     setOnline(false);
                     tempFooterEl.textContent = 'brak danych z czujnika';

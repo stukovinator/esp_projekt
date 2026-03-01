@@ -1,7 +1,8 @@
+import time
+time.sleep(2)
 from machine import Pin, SoftI2C
 import onewire
 import ds18x20
-import time
 import ssd1306
 import network
 import socket
@@ -11,14 +12,18 @@ from config import NETWORKS, API_URL
 import ntptime
 
 wifi = network.WLAN(network.STA_IF)
-wifi.active(True)
+wifi.active(False)  # najpierw wyłącz
+time.sleep(1)
+wifi.active(True)   # potem włącz
+time.sleep(1)
 
 connected = False
-
 for ssid, password in NETWORKS:
     print("Próbuję:", ssid)
+    wifi.disconnect()
+    time.sleep(0.5)
     wifi.connect(ssid, password)
-    for _ in range(20):  # czeka max 10 sekund na sieć
+    for _ in range(20):
         if wifi.isconnected():
             connected = True
             break
@@ -30,9 +35,13 @@ for ssid, password in NETWORKS:
 if connected:
     ip = wifi.ifconfig()[0]
     print("IP:", ip)
-    ntptime.settime()
+    try:
+        ntptime.settime()
+    except:
+        print("NTP failed")
 else:
     ip = "brak WiFi"
+    print("Brak WiFi - nie wysyłam danych")
 
 i2c = SoftI2C(scl=Pin(22), sda=Pin(23))
 oled_width = 128
@@ -42,7 +51,7 @@ oled = ssd1306.SSD1306_I2C(oled_width, oled_height, i2c)
 ds_sensor = ds18x20.DS18X20(onewire.OneWire(Pin(32)))
 roms = ds_sensor.scan()
 
-oled.text("hello", 0, 0)
+oled.text("BOOT", 0, 0)
 oled.show()
 
 last_send_ok = False
@@ -72,18 +81,21 @@ def show_temp(temp, send_ok=False):
 def send_temp(temp):
     try:
         t = time.localtime()
+        hour = (t[3] + 1) % 24
         timestamp = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(
-            t[0], t[1], t[2], t[3]+1, t[4], t[5]
+            t[0], t[1], t[2], hour, t[4], t[5]
         )
         data = json.dumps({
             "temperature": temp,
             "timestamp": timestamp
         })
+        print("Wysyłam:", data)  # ← dodaj
         urequests.post(
             API_URL,
             data=data,
             headers={"Content-Type": "application/json"}
         )
+        print("Wysłano OK")  # ← dodaj
         return True
     except Exception as e:
         print("Błąd wysyłania:", e)
