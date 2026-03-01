@@ -63,7 +63,6 @@
             gap: 12px;
         }
 
-        /* Nagłówek */
         .header {
             display: flex;
             align-items: flex-start;
@@ -86,7 +85,6 @@
             margin-top: 2px;
         }
 
-        /* Pill statusu */
         .status-pill {
             display: flex;
             align-items: center;
@@ -134,7 +132,6 @@
             }
         }
 
-        /* Główna karta */
         .main-card {
             background: var(--card);
             border-radius: 20px;
@@ -154,7 +151,6 @@
             margin-bottom: 16px;
         }
 
-        /* Ogromna liczba */
         .temp-row {
             display: flex;
             align-items: flex-start;
@@ -201,7 +197,6 @@
             margin-top: 2px;
         }
 
-        /* Pasek postępu */
         .progress-wrap {
             width: 100%;
             margin-top: 24px;
@@ -239,7 +234,6 @@
             color: var(--text-ter);
         }
 
-        /* Separator */
         .sep-line {
             width: 100%;
             height: 1px;
@@ -247,7 +241,6 @@
             margin-top: 20px;
         }
 
-        /* Status tekst pod linią */
         .temp-footer {
             width: 100%;
             text-align: center;
@@ -258,7 +251,6 @@
             letter-spacing: 0.02em;
         }
 
-        /* Siatka statystyk */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -329,7 +321,37 @@
             font-weight: 400;
         }
 
-        /* Karta ostatniego odczytu */
+        .chart-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 20px 20px 16px;
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .chart-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .chart-subtitle {
+            font-size: 11px;
+            font-weight: 400;
+            color: var(--text-ter);
+            margin-top: 2px;
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 120px;
+        }
+
         .update-card {
             background: var(--card);
             border-radius: var(--radius);
@@ -372,7 +394,6 @@
             font-variant-numeric: tabular-nums;
         }
 
-        /* Przycisk */
         .refresh-btn {
             width: 100%;
             padding: 17px;
@@ -400,7 +421,6 @@
             transform: none;
         }
 
-        /* Animacje wejścia */
         .container>* {
             animation: rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
@@ -455,12 +475,12 @@
             animation: numPop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 
 <body>
     <div class="container">
 
-        <!-- Nagłówek -->
         <div class="header">
             <div class="header-left">
                 <h1>Termometr</h1>
@@ -472,7 +492,6 @@
             </div>
         </div>
 
-        <!-- Główna karta -->
         <div class="main-card">
             <span class="main-card-label">Temperatura w pomieszczeniu</span>
             <div class="temp-row">
@@ -499,7 +518,18 @@
             <div class="temp-footer" id="tempFooter">Oczekiwanie na dane…</div>
         </div>
 
-        <!-- Statystyki -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">Historia temperatury</div>
+                    <div class="chart-subtitle">Ostatnie 24 godziny</div>
+                </div>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon-row">
@@ -519,7 +549,6 @@
             </div>
         </div>
 
-        <!-- Ostatni odczyt -->
         <div class="update-card">
             <div class="update-left">
                 <div class="update-icon">🕐</div>
@@ -530,19 +559,21 @@
             </div>
         </div>
 
-        <!-- Przycisk -->
         <button class="refresh-btn" id="refreshBtn" onclick="fetchTemp()">Odśwież</button>
 
     </div>
 
     <script>
         const API_URL = 'https://espprojekt-production.up.railway.app/temperature';
+        const HISTORY_URL = 'https://espprojekt-production.up.railway.app/history?hours=24';
         const INTERVAL = 10000;
-        const MAX_AGE = 30;   // sekundy
+        const HISTORY_INTERVAL = 60000;
+        const MAX_AGE = 30;
         const TEMP_MIN = -10;
         const TEMP_MAX = 40;
 
         let minTemp = null, maxTemp = null, prevTemp = null;
+        let chart = null;
 
         const tempNumEl = document.getElementById('tempNum');
         const statusPill = document.getElementById('statusPill');
@@ -553,6 +584,97 @@
         const maxEl = document.getElementById('maxVal');
         const progressFill = document.getElementById('progressFill');
         const refreshBtn = document.getElementById('refreshBtn');
+
+        function initChart() {
+            const ctx = document.getElementById('tempChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        borderColor: '#0a84ff',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        pointHoverBackgroundColor: '#0a84ff',
+                        fill: true,
+                        backgroundColor: (ctx) => {
+                            const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 120);
+                            gradient.addColorStop(0, 'rgba(10, 132, 255, 0.2)');
+                            gradient.addColorStop(1, 'rgba(10, 132, 255, 0)');
+                            return gradient;
+                        },
+                        tension: 0.4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 600, easing: 'easeInOutQuart' },
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#2c2c2e',
+                            titleColor: '#ebebf599',
+                            bodyColor: '#ffffff',
+                            borderColor: '#38383a',
+                            borderWidth: 1,
+                            padding: 10,
+                            titleFont: { family: 'Outfit', size: 11 },
+                            bodyFont: { family: 'Outfit', size: 14, weight: '600' },
+                            callbacks: {
+                                title: (items) => items[0].label,
+                                label: (item) => ` ${item.raw.toFixed(1)}°C`,
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            border: { display: false },
+                            ticks: {
+                                color: 'rgba(235,235,245,0.3)',
+                                font: { family: 'Outfit', size: 10 },
+                                maxTicksLimit: 6,
+                                maxRotation: 0,
+                            }
+                        },
+                        y: {
+                            grid: { color: 'rgba(235,235,245,0.05)', drawBorder: false },
+                            border: { display: false },
+                            ticks: {
+                                color: 'rgba(235,235,245,0.3)',
+                                font: { family: 'Outfit', size: 10 },
+                                maxTicksLimit: 4,
+                                callback: (v) => v + '°'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function fetchHistory() {
+            try {
+                const res = await fetch(HISTORY_URL, { cache: 'no-store' });
+                const data = await res.json();
+                if (!data.length) return;
+
+                const labels = data.map(d => {
+                    const t = new Date(d.timestamp.replace(' ', 'T'));
+                    return t.getHours().toString().padStart(2, '0') + ':' + t.getMinutes().toString().padStart(2, '0');
+                });
+                const values = data.map(d => parseFloat(d.temperature));
+
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = values;
+                chart.update();
+            } catch (e) {
+                console.warn('Historia niedostępna', e);
+            }
+        }
 
         function setOnline(on) {
             statusPill.classList.toggle('online', on);
@@ -630,8 +752,11 @@
             refreshBtn.textContent = 'Odśwież';
         }
 
+        initChart();
         fetchTemp();
+        fetchHistory();
         setInterval(fetchTemp, INTERVAL);
+        setInterval(fetchHistory, HISTORY_INTERVAL);
     </script>
 </body>
 
