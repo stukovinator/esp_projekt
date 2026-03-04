@@ -20,9 +20,15 @@ def init_db():
         CREATE TABLE IF NOT EXISTS readings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             temperature REAL NOT NULL,
+            humidity REAL,
             timestamp TEXT NOT NULL
         )
     ''')
+    # Dodaj kolumnę humidity jeśli nie istnieje (dla starych baz)
+    try:
+        conn.execute('ALTER TABLE readings ADD COLUMN humidity REAL')
+    except:
+        pass
     conn.execute('''
         CREATE INDEX IF NOT EXISTS idx_timestamp ON readings(timestamp)
     ''')
@@ -39,7 +45,6 @@ def cleanup_old():
 @app.route('/temperature', methods=['GET'])
 def get_temp():
     conn = get_db()
-    # ostatni odczyt
     last = conn.execute(
         'SELECT * FROM readings ORDER BY timestamp DESC LIMIT 1'
     ).fetchone()
@@ -48,20 +53,22 @@ def get_temp():
     if last:
         return jsonify({
             'temperature': last['temperature'],
+            'humidity': last['humidity'],
             'last_updated': last['timestamp']
         })
-    return jsonify({'temperature': None, 'last_updated': None})
+    return jsonify({'temperature': None, 'humidity': None, 'last_updated': None})
 
 @app.route('/temperature', methods=['POST'])
 def post_temp():
     data = request.get_json()
     temp = data.get('temperature')
+    hum = data.get('humidity')
     timestamp = data.get('timestamp')
 
     conn = get_db()
     conn.execute(
-        'INSERT INTO readings (temperature, timestamp) VALUES (?, ?)',
-        (temp, timestamp)
+        'INSERT INTO readings (temperature, humidity, timestamp) VALUES (?, ?, ?)',
+        (temp, hum, timestamp)
     )
     conn.commit()
     conn.close()
@@ -76,12 +83,16 @@ def get_history():
 
     conn = get_db()
     rows = conn.execute(
-        'SELECT temperature, timestamp FROM readings WHERE timestamp > ? ORDER BY timestamp ASC',
+        'SELECT temperature, humidity, timestamp FROM readings WHERE timestamp > ? ORDER BY timestamp ASC',
         (cutoff,)
     ).fetchall()
     conn.close()
 
-    return jsonify([{'temperature': r['temperature'], 'timestamp': r['timestamp']} for r in rows])
+    return jsonify([{
+        'temperature': r['temperature'],
+        'humidity': r['humidity'],
+        'timestamp': r['timestamp']
+    } for r in rows])
 
 init_db()
 
