@@ -1,8 +1,6 @@
-import time
-time.sleep(2)
 from machine import Pin, SoftI2C
-import onewire
-import ds18x20
+import dht
+import time
 import ssd1306
 import network
 import socket
@@ -12,9 +10,9 @@ from config import NETWORKS, API_URL
 import ntptime
 
 wifi = network.WLAN(network.STA_IF)
-wifi.active(False)  # najpierw wyłącz
+wifi.active(False)
 time.sleep(1)
-wifi.active(True)   # potem włącz
+wifi.active(True)
 time.sleep(1)
 
 connected = False
@@ -23,7 +21,7 @@ for ssid, password in NETWORKS:
     wifi.disconnect()
     time.sleep(0.5)
     wifi.connect(ssid, password)
-    for _ in range(20):
+    for _ in range(40):
         if wifi.isconnected():
             connected = True
             break
@@ -41,44 +39,45 @@ if connected:
         print("NTP failed")
 else:
     ip = "brak WiFi"
-    print("Brak WiFi - nie wysyłam danych")
+    print("Brak WiFi!")
 
 i2c = SoftI2C(scl=Pin(22), sda=Pin(23))
-oled_width = 128
-oled_height = 64
-oled = ssd1306.SSD1306_I2C(oled_width, oled_height, i2c)
-
-ds_sensor = ds18x20.DS18X20(onewire.OneWire(Pin(32)))
-roms = ds_sensor.scan()
-
-oled.text("BOOT", 0, 0)
+oled = ssd1306.SSD1306_I2C(128, 64, i2c)
+oled.text("Inicjalizacja...", 0, 0)
 oled.show()
 
-last_send_ok = False
+sensor = dht.DHT11(Pin(32))
+sensor.measure()
+print(sensor.temperature())
 
-def read_temperature():
-    ds_sensor.convert_temp()
-    time.sleep_ms(750)
-    return ds_sensor.read_temp(roms[0])
+def read_sensor():
+    sensor.measure()
+    temp = sensor.temperature()
+    hum = sensor.humidity()
+    return temp, hum
 
-def draw_degree(oled, x, y):
+def draw_degree(x, y):
     oled.pixel(x,   y,   1)
     oled.pixel(x+1, y,   1)
     oled.pixel(x,   y+1, 1)
     oled.pixel(x+1, y+1, 1)
 
-def show_temp(temp, send_ok=False):
+def show_data(temp, hum, send_ok=False):
     oled.fill(0)
-    oled.text("Temperatura", 0, 0)
+    oled.text("Temp:", 0, 0)
     temp_str = "{:.1f} ".format(temp)
-    oled.text(temp_str, 0, 20)
-    draw_degree(oled, len(temp_str) * 8 + 2, 20)
-    oled.text("C", len(temp_str) * 8 + 6, 20)
+    oled.text(temp_str, 40, 0)
+    draw_degree(40 + len(temp_str) * 8, 0)
+    oled.text("C", 40 + len(temp_str) * 8 + 6, 0)
+
+    oled.text("Wilg:", 0, 20)
+    oled.text("{:.0f}%".format(hum), 40, 20)
+
     status = "Online" if send_ok else "Offline"
     oled.text(status, 0, 50)
     oled.show()
-    
-def send_temp(temp):
+
+def send_data(temp, hum):
     try:
         t = time.localtime()
         hour = (t[3] + 1) % 24
@@ -86,16 +85,15 @@ def send_temp(temp):
             t[0], t[1], t[2], hour, t[4], t[5]
         )
         data = json.dumps({
-            "temperature": temp,
+            "temperature": round(temp, 1),
+            "humidity": round(hum, 1),
             "timestamp": timestamp
         })
-        print("Wysyłam:", data)  # ← dodaj
         urequests.post(
             API_URL,
             data=data,
             headers={"Content-Type": "application/json"}
         )
-        print("Wysłano OK")  # ← dodaj
         return True
     except Exception as e:
         print("Błąd wysyłania:", e)
@@ -109,25 +107,32 @@ server.setblocking(False)
 print("Serwer działa!")
 
 last_read = 0
-temp = read_temperature()
+temp, hum = 0, 0
 
+# --- Główna pętla ---
 while True:
     if time.ticks_diff(time.ticks_ms(), last_read) > 60000:
-        temp = read_temperature()
-        send_ok = send_temp(temp)
-        show_temp(temp, send_ok)
+        try:
+            temp, hum = read_sensor()
+            send_ok = send_data(temp, hum)
+            show_data(temp, hum, send_ok)
+            print("Temp: {:.1f}C  Wilg: {:.0f}%".format(temp, hum))
+        except Exception as e:
+            print("Błąd odczytu:", e)
         last_read = time.ticks_ms()
 
     try:
         conn, addr = server.accept()
         request = conn.recv(1024).decode()
-
         if "GET /temperature" in request:
-            body = json.dumps({"temperature": temp, "unit": "C"})
+            body = json.dumps({
+                "temperature": temp,
+                "humidity": hum,
+                "unit": "C"
+            })
             response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\n\r\n" + body
         else:
             response = "HTTP/1.1 404 Not Found\r\n\r\n"
-
         conn.send(response)
         conn.close()
     except:

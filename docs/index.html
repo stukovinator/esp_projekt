@@ -63,7 +63,6 @@
             gap: 12px;
         }
 
-        /* Nagłówek */
         .header {
             display: flex;
             align-items: flex-start;
@@ -86,7 +85,6 @@
             margin-top: 2px;
         }
 
-        /* Pill statusu */
         .status-pill {
             display: flex;
             align-items: center;
@@ -134,7 +132,6 @@
             }
         }
 
-        /* Główna karta */
         .main-card {
             background: var(--card);
             border-radius: 20px;
@@ -154,7 +151,6 @@
             margin-bottom: 16px;
         }
 
-        /* Ogromna liczba */
         .temp-row {
             display: flex;
             align-items: flex-start;
@@ -201,7 +197,6 @@
             margin-top: 2px;
         }
 
-        /* Pasek postępu */
         .progress-wrap {
             width: 100%;
             margin-top: 24px;
@@ -239,7 +234,6 @@
             color: var(--text-ter);
         }
 
-        /* Separator */
         .sep-line {
             width: 100%;
             height: 1px;
@@ -247,7 +241,6 @@
             margin-top: 20px;
         }
 
-        /* Status tekst pod linią */
         .temp-footer {
             width: 100%;
             text-align: center;
@@ -258,7 +251,6 @@
             letter-spacing: 0.02em;
         }
 
-        /* Siatka statystyk */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -300,7 +292,6 @@
             background: rgba(48, 209, 88, 0.15);
         }
 
-        /* Karta wilgotności */
         .hum-card {
             background: var(--card);
             border-radius: 20px;
@@ -411,7 +402,6 @@
             font-weight: 400;
         }
 
-        /* Karta wykresu */
         .chart-card {
             background: var(--card);
             border-radius: 20px;
@@ -486,7 +476,6 @@
             font-variant-numeric: tabular-nums;
         }
 
-        /* Przycisk */
         .refresh-btn {
             width: 100%;
             padding: 17px;
@@ -514,7 +503,6 @@
             transform: none;
         }
 
-        /* Animacje wejścia */
         .container>* {
             animation: rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
@@ -575,7 +563,6 @@
 <body>
     <div class="container">
 
-        <!-- Nagłówek -->
         <div class="header">
             <div class="header-left">
                 <h1>Termometr</h1>
@@ -587,7 +574,6 @@
             </div>
         </div>
 
-        <!-- Główna karta -->
         <div class="main-card">
             <span class="main-card-label">Temperatura w pomieszczeniu</span>
             <div class="temp-row">
@@ -614,7 +600,6 @@
             <div class="temp-footer" id="tempFooter">Oczekiwanie na dane…</div>
         </div>
 
-        <!-- Wykres 24h -->
         <div class="chart-card">
             <div class="chart-header">
                 <div>
@@ -627,7 +612,6 @@
             </div>
         </div>
 
-        <!-- Wilgotność -->
         <div class="hum-card">
             <div class="hum-left">
                 <span class="hum-label">Wilgotność</span>
@@ -644,7 +628,6 @@
             </div>
         </div>
 
-        <!-- Statystyki -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon-row">
@@ -664,7 +647,6 @@
             </div>
         </div>
 
-        <!-- Ostatni odczyt -->
         <div class="update-card">
             <div class="update-left">
                 <div class="update-icon">🕐</div>
@@ -675,7 +657,6 @@
             </div>
         </div>
 
-        <!-- Przycisk -->
         <button class="refresh-btn" id="refreshBtn" onclick="fetchTemp()">Odśwież</button>
 
     </div>
@@ -720,7 +701,6 @@
             humDesc.textContent = humLabel(hum);
         }
 
-        // Inicjalizacja wykresu
         function initChart() {
             const ctx = document.getElementById('tempChart').getContext('2d');
             chart = new Chart(ctx, {
@@ -889,7 +869,6 @@
             refreshBtn.textContent = 'Odśwież';
         }
 
-        // Start
         initChart();
         fetchTemp();
         fetchHistory();

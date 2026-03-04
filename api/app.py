@@ -24,7 +24,7 @@ def init_db():
             timestamp TEXT NOT NULL
         )
     ''')
-    # Dodaj kolumnę humidity jeśli nie istnieje (dla starych baz)
+    
     try:
         conn.execute('ALTER TABLE readings ADD COLUMN humidity REAL')
     except:
